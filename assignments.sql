@@ -1,1 +1,205 @@
---YOUR CODE HERE
+-- -- -- -- SELECT
+-- -- 1:
+-- select PRODUCT_ID, PRODUCT_NAME, LIST_PRICE
+-- from oe.product_information
+-- order by PRODUCT_NAME
+-- -- 2:
+-- select FIRST_NAME||'-'||LAST_NAME as FULL_NAME, phone_number, trunc((Sysdate-(HIRE_DATE))/30)/12 YEARS_IN_COMPANY
+-- FROM hr.employees
+-- -- 3:
+-- select FIRST_NAME, SALARY
+-- from hr.employees
+-- where  EXTRACT(YEAR FROM HIRE_DATE) > 2005
+-- order by salary
+-- -- 4:
+-- select PRODUCT_NAME
+-- from oe.product_information
+-- where LIST_PRICE - MIN_PRICE > 100
+-- order by PRODUCT_NAME
+
+-- -- -- -- JOIN
+-- -- 1:
+-- select c.CUSTOMER_ID, c.CUST_FIRST_NAME, o.ORDER_ID
+-- from oe.customers c, oe.orders o
+-- where c.CUSTOMER_ID = o.CUSTOMER_ID and c.CREDIT_LIMIT BETWEEN 200 and 900 and EXTRACT(YEAR FROM o.ORDER_DATE) = 2007
+-- order by c.CUST_FIRST_NAME, o.ORDER_ID
+-- -- 2:
+-- select pi.PRODUCT_NAME, pi.LIST_PRICE, ct.CATEGORY_NAME
+-- from oe.categories_tab ct, oe.product_information pi
+-- where ct.CATEGORY_ID = pi.CATEGORY_ID
+-- order by ct.CATEGORY_NAME
+-- -- 3:
+-- select customers.CUST_FIRST_NAME||'-'||customers.CUST_LAST_NAME as FULL_NAME, pi.PRODUCT_NAME
+-- from oe.orders, oe.order_items oi, oe.customers, oe.product_information pi
+-- where pi.PRODUCT_ID = oi.PRODUCT_ID and
+--       orders.CUSTOMER_ID = customers.CUSTOMER_ID and
+--       orders.ORDER_ID = oi.ORDER_ID and
+--       EXTRACT(YEAR FROM orders.ORDER_DATE) = 2008 and
+--       oi.UNIT_PRICE > 10
+-- -- 4:
+-- select oi.ORDER_ID, pi.PRODUCT_NAME, oi.UNIT_PRICE * oi.QUANTITY as tot_price
+-- from oe.order_items oi,
+--      oe.orders,
+--      oe.product_information pi
+-- where oi.ORDER_ID = orders.ORDER_ID and
+--       oi.PRODUCT_ID = pi.PRODUCT_ID and
+--       EXTRACT(YEAR FROM orders.ORDER_DATE) = 2008
+-- -- 5:
+-- select emp1.FIRST_NAME||'-'||emp1.LAST_NAME as employee_name,
+--        emp2.FIRST_NAME||'-'||emp2.LAST_NAME as manager_name
+-- from hr.employees emp1
+-- left join hr.employees emp2
+-- on (emp1.MANAGER_ID=emp2.EMPLOYEE_ID)
+-- order by emp1.FIRST_NAME
+
+-- -- -- -- AGGREGATION
+-- -- 1:
+-- select avg(trunc((END_DATE-START_DATE)/30)/12)
+-- from hr.job_history
+-- -- 2:
+-- we were told not to do this
+-- -- 3:
+-- select SUPPLIER_ID, count(PRODUCT_ID)
+-- from oe.product_information
+-- group by SUPPLIER_ID
+-- -- 4:
+-- select	PRODUCT_ID, Sum(QUANTITY) -- count(ORDER_ID)
+-- from oe.order_items
+-- group by PRODUCT_ID
+-- -- 5:
+-- select min(ORDER_DATE), max(ORDER_DATE), count(ORDER_ID), sum(ORDER_TOTAL)
+-- from oe.orders
+-- group by EXTRACT(YEAR FROM orders.ORDER_DATE)
+-- -- 6:
+-- select count(ORDER_ID), to_char(ORDER_DATE, 'DY')
+-- from oe.orders
+-- group by to_char(ORDER_DATE, 'DY')
+-- -- 7:
+-- select employees.FIRST_NAME||'-'||employees.LAST_NAME as FULL_NAME,
+--        sum(orders.ORDER_TOTAL)   
+-- from oe.orders, hr.employees 
+-- where EXTRACT(YEAR FROM orders.ORDER_DATE) = 2007 and
+--       orders.SALES_REP_ID = employees.EMPLOYEE_ID
+-- group by employees.FIRST_NAME, employees.LAST_NAME
+-- having sum(orders.ORDER_TOTAL) > 20000
+-- -- 8:
+-- select cust.CUST_FIRST_NAME||'-'||cust.CUST_LAST_NAME as FULL_NAME,
+--        sum(orders.ORDER_TOTAL/1000) as oracle_points
+-- from oe.customers cust, oe.orders
+-- where cust.CUSTOMER_ID = orders.CUSTOMER_ID
+-- group by cust.CUST_FIRST_NAME, CUST_LAST_NAME
+
+-- -- -- -- SUB QUERIES
+-- -- 1:
+-- select PRODUCT_NAME
+-- from oe.product_information
+-- where (select max(LIST_PRICE) from oe.product_information) = LIST_PRICE
+-- -- 2:
+-- select pi.PRODUCT_NAME
+-- from oe.product_information pi
+-- where pi.LIST_PRICE = (select max(LIST_PRICE)
+--                        from oe.product_information pi, oe.order_items oi
+--                        where pi.PRODUCT_ID = oi.PRODUCT_ID)
+-- -- 3:
+-- select pi.PRODUCT_NAME
+-- from oe.product_information pi
+-- where (select avg(LIST_PRICE) from oe.product_information) < pi.LIST_PRICE
+-- -- 4:
+-- select pi.PRODUCT_NAME
+-- from oe.product_information pi, oe.order_items oi, oe.orders, hr.employees
+-- where pi.PRODUCT_ID = oi.PRODUCT_ID and
+--       oi.ORDER_ID = orders.ORDER_ID and
+--       orders.SALES_REP_ID = employees.EMPLOYEE_ID and
+--       employees.HIRE_DATE = (select min(HIRE_DATE) from hr.employees where JOB_ID = 'SA_REP')
+-- -- 5:
+-- select pi1.PRODUCT_NAME 
+-- from oe.product_information pi1, oe.order_items oi1, oe.order_items oi2, oe.product_information pi2
+-- where pi1.PRODUCT_ID = oi1.PRODUCT_ID and
+--       oi1.ORDER_ID = oi2.ORDER_ID and
+--       oi2.PRODUCT_ID = pi2.PRODUCT_ID and
+--       pi2.LIST_PRICE = (select max(LIST_PRICE)
+--                         from oe.product_information pi, oe.order_items oi
+--                         where pi.PRODUCT_ID = oi.PRODUCT_ID)
+
+-- -- -- -- ANALYTIC
+-- -- 1:
+-- select *
+-- from
+-- (
+--   select row_number() over (partition by CATEGORY_ID order by LIST_PRICE DESC) as row_num, LIST_PRICE, PRODUCT_NAME, Category_id
+--   from oe.product_information pi
+--   where LIST_PRICE is not null
+-- )
+-- where row_num <= 3
+-- -- 2:
+-- SELECT year,
+--        year_total,
+--        LAG(year_total, 1, 0) OVER (ORDER BY year_total) AS total_previous, 
+--        year_total - LAG(year_total, 1, 0) OVER (ORDER BY year_total)  AS Diff
+-- from
+--   (
+--   select sum(ORDER_TOTAL) as year_total, 
+--          EXTRACT(YEAR FROM ORDER_DATE) as year
+--   from oe.orders
+--   group by EXTRACT(YEAR FROM ORDER_DATE)
+--   )
+-- -- 3:
+-- select year,
+-- month,
+-- month_total,
+-- SUM(month_total) OVER ( PARTITION BY year ORDER BY year, month ASC) AS running_total
+-- from 
+-- (
+--   select EXTRACT(YEAR FROM ORDER_DATE) as year, EXTRACT(MONTH FROM ORDER_DATE) as month, sum(ORDER_TOTAL) as month_total
+--   from oe.orders
+--   group by EXTRACT(YEAR FROM ORDER_DATE), EXTRACT(MONTH FROM ORDER_DATE)
+--   --order by EXTRACT(YEAR FROM ORDER_DATE), EXTRACT(MONTH FROM ORDER_DATE)
+-- )
+-- ORDER BY year, month;
+
+-- -- -- -- VIEWS
+-- -- 1:
+-- CREATE OR REPLACE VIEW quantity_by_id_by_year AS
+--   select sum(QUANTITY) quant, SALES_REP_ID rep_id, EXTRACT(YEAR FROM ORDER_DATE) year
+--   from oe.order_items oi, oe.orders ord
+--   where oi.ORDER_ID = ord.ORDER_ID and
+--         SALES_REP_ID is not null
+--   group by SALES_REP_ID, EXTRACT(YEAR FROM ORDER_DATE);
+
+-- CREATE OR REPLACE VIEW max_quant_by_year AS
+--   select year, max(quant) max_quant
+--   from quantity_by_id_by_year
+--   group by year
+
+-- -- 2:
+-- CREATE OR REPLACE VIEW best_rep_per_year AS
+--  select max_quant_by_year.year, quantity_by_id_by_year.rep_id
+--  from quantity_by_id_by_year, max_quant_by_year
+--  where quantity_by_id_by_year.quant = max_quant_by_year.max_quant
+
+-- -- 3:
+-- CREATE OR REPLACE VIEW product_and_amount AS
+--   select PRODUCT_ID, QUANTITY as amount
+--   from oe.order_items;
+
+-- CREATE OR REPLACE VIEW tot_amount_per_item AS
+--   select distinct PRODUCT_ID, sum(amount) over (partition by PRODUCT_ID) tot_amount
+--   from product_and_amount
+--   order by PRODUCT_ID;
+
+-- CREATE OR REPLACE VIEW most_ordered_item AS
+--   select PRODUCT_ID, max_amount
+--   from tot_amount_per_item,
+--       (
+--         select distinct max(tot_amount) over () as max_amount
+--         from tot_amount_per_item
+--       ) max_amount
+--   where max_amount.max_amount = tot_amount_per_item.tot_amount;
+
+-- -- 4:
+-- CREATE OR REPLACE VIEW product_and_amount AS
+--   select PRODUCT_ID, QUANTITY*UNIT_PRICE as amount
+--   from oe.order_items;
+
+-- -- and now run the last two paragraphs of part 3
+
