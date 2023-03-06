@@ -1,0 +1,67 @@
+-- DECLARE
+-- TYPE STRINGS IS VARRAY(3) OF varchar2(20);
+-- NAME STRINGS := STRINGS('EYAL','TZIPOR','LOL');
+-- TYPE NUMS IS VARRAY(4) OF number;
+-- NUMBERS NUMS := NUMS(25,16,24,3);
+-- BEGIN  
+-- dbms_output.put_line(NAME(1) || ' - ' ||NUMBERS(1));
+-- dbms_output.put_line(NAME(NAME.LAST()) || ' - ' ||NUMBERS(NUMBERS.LAST()));
+-- IF LENGTH(NAME(NAME.FIRST())) = 4 THEN
+--   dbms_output.put_line('THERE ARE FOUR CHARACTERS');
+-- ELSE 
+--   dbms_output.put_line('THIS IS NOT A FOUR CHAR NAME');
+-- END IF;
+
+-- CASE NUMBERS(NUMBERS.LAST())
+--   WHEN 2 THEN dbms_output.put_line('NUMBER IS TWO');
+--   WHEN 3 THEN dbms_output.put_line('NUMBER IS THREE');
+--   WHEN 4 THEN dbms_output.put_line('NUMBER IS FOUR');
+--   ELSE dbms_output.put_line('BAD NUMBER');
+-- END CASE;
+
+-- FOR a in 1..NAME.COUNT LOOP
+--   dbms_output.put_line(NAME(a));
+-- END LOOP;
+
+-- FOR a in 1..NAME.COUNT LOOP
+--   dbms_output.put_line(SUBSTR(NAME(a), 1,a));
+-- END LOOP;
+  
+-- -- END;
+-- -- /
+
+-- declare 
+-- f_name HR.EMPLOYEES.FIRST_NAME%type;
+-- l_name HR.EMPLOYEES.LAST_NAME%type;
+-- fullname varchar2(20) := 'stam';
+-- CURSOR EMPLOYEES_NAMES is select FIRST_NAME, LAST_NAME from HR.EMPLOYEES;
+-- begin 
+-- open EMPLOYEES_NAMES;
+-- loop
+-- FETCH EMPLOYEES_NAMES into f_name, l_name;
+-- EXIT WHEN EMPLOYEES_NAMES%notfound;
+-- fullname := f_name||' - '||l_name;
+-- dbms_output.put_line(fullname);
+-- END LOOP;
+-- CLOSE EMPLOYEES_NAMES;
+-- end;
+-- /
+
+-- declare 
+-- fullname varchar2(20) := 'stam';
+-- begin
+
+-- for r in (select FIRST_NAME,LAST_NAME from HR.EMPLOYEES) loop
+-- fullname := r.FIRST_NAME||' - '||r.LAST_NAME;
+-- dbms_output.put_line(fullname);
+-- end loop;
+-- End;
+-- /
+
+begin
+for r in (select FIRST_NAME,LAST_NAME from HR.EMPLOYEES where LENGTH(FIRST_NAME)=LENGTH(LAST_NAME)) loop
+dbms_output.put_line(r.FIRST_NAME||' - '||r.LAST_NAME);
+end loop;
+End;
+/
+
