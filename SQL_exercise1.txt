@@ -1,0 +1,209 @@
+Select Quary:
+
+1.
+select PRODUCT_NAME, PRODUCT_ID, LIST_PRICE
+from oe.product_information
+order by 1,2.3
+
+2.
+select FIRST_NAME ||' '|| LAST_NAME as FULL_NAME,
+  PHONE_NUMBER,
+  ROUND((EXTRACT(YEAR FROM sysdate)-(EXTRACT(YEAR FROM HIRE_DATE))+(EXTRACT(MONTH FROM sysdate)-(EXTRACT(MONTH FROM HIRE_DATE)/12))),2) AS years
+from hr.employees
+
+3.
+select FIRST_NAME ||' '|| LAST_NAME as FULL_NAME,
+  SALARY
+from hr.employees
+where extract(year from HIRE_DATE) > 2005
+order by SALARY
+
+4.
+select PRODUCT_NAME
+from oe.product_information
+where LIST_PRICE-MIN_PRICE > 100
+order by PRODUCT_NAME
+
+
+
+Join Tables:
+
+1.
+select customers.CUSTOMER_ID,
+  customers.CUST_FIRST_NAME||' '||customers.CUST_LAST_NAME as CUST_FULL_NAME,
+  orders.ORDER_ID
+from oe.orders,
+  oe.customers
+where extract(YEAR from orders.ORDER_DATE) = 2007
+  and orders.CUSTOMER_ID = customers.CUSTOMER_ID
+  and customers.CREDIT_LIMIT < 700
+  and customers.CREDIT_LIMIT > 200
+order by customers.CUST_FIRST_NAME,orders.ORDER_ID
+
+2.
+select prod.PRODUCT_NAME,
+  prod.LIST_PRICE as price,
+  categ.CATEGORY_NAME
+from oe.product_information prod,
+  oe.categories_tab categ
+where categ.CATEGORY_ID = prod.CATEGORY_ID
+order by categ.CATEGORY_NAME
+
+
+
+
+
+
+
+Aggregation Functions
+
+1.
+SELECT round(AVG(EXTRACT(YEAR FROM sysdate)-(EXTRACT(YEAR FROM HIRE_DATE))),3) AVG_SENIORITY
+FROM hr.employees
+
+--17.551 years avg seniority
+
+3.
+select count(product_id) quantity, supplier_id
+from oe.product_information prod
+group by supplier_id
+order by products desc
+
+4.
+select product_id, sum(quantity) total_bought
+from oe.order_items ord
+group by product_id
+order by total_bought desc
+
+6.
+select to_char(ORDER_DATE, 'DAY') AS Weekday , count(order_id) orders_per_day, sum(order_total)
+from oe.orders
+group by to_char(ORDER_DATE, 'DAY')
+order by Weekday
+
+8.
+select floor(sum(ord.order_total)/1000) as Oracle_points,
+  cust.cust_first_name||' '||cust.cust_last_name as cust_name
+from oe.orders ord,
+  oe.customers cust
+group by cust.cust_first_name||' '||cust.cust_last_name
+order by cust_name
+
+
+
+
+
+Sub Queries:
+
+1.
+select product_name, LIST_PRICE
+from oe.product_information
+where LIST_PRICE=(select max(LIST_PRICE) from oe.product_information)
+
+2.
+select product_name
+from oe.product_information
+where product_id in
+  (select product_id from oe.order_items where unit_price = (select max(unit_price) from oe.order_items))
+
+3.
+select product_name, LIST_PRICE
+from oe.product_information
+where LIST_PRICE >
+  (select avg(LIST_PRICE) from oe.product_information)
+order by LIST_PRICE
+
+--avg price is 249.6748
+
+4.
+select product_name
+from oe.product_information pi, (
+  select product_id
+    from oe.order_items
+    where order_id in
+    (
+    select order_id
+    from oe.orders
+    where sales_rep_id =
+      (
+      select employee_id 
+      from hr.employees
+      where hire_date = 
+        (
+        select min(hire_date)
+        from hr.employees
+        where JOB_ID='SA_REP'
+        )
+      )
+    ) )bla
+  where pi.product_id = bla.product_id
+
+5.
+select PRODUCT_NAME
+  from oe.product_information
+  where product_id in
+  (
+  select product_id
+  from oe.order_items
+  where order_id in
+    (
+    select order_id
+    from oe.order_items
+    where product_id =
+      (select distinct product_id from oe.order_items where unit_price = (select max(unit_price) from oe.order_items))
+    )
+  )
+
+
+
+
+
+Analytic Functions:
+
+1.
+select PRODUCT_NAME, LIST_PRICE, CATEGORY_ID
+from (select CATEGORY_ID, LIST_PRICE, PRODUCT_NAME, row_number() over (partition by CATEGORY_ID order by LIST_PRICE desc) row_num
+from oe.PRODUCT_INFORMATION
+where list_price is not null)
+where row_num <=3
+
+2.
+select year_, total_cost, total_cost-lag(total_cost) over (order by year_) diffrence
+from
+(
+  select EXTRACT(YEAR FROM ORDER_DATE) year_ , sum(ORDER_TOTAL) total_cost
+  from oe.orders
+  group by EXTRACT(YEAR FROM ORDER_DATE)
+)
+order by year_
+
+3.
+select year_, month_, month_cost, sum(month_cost) over (partition by year_ order by year_,month_) year_cost
+from
+(
+  select EXTRACT(month FROM ORDER_DATE) month_,
+  EXTRACT(year FROM ORDER_DATE) year_,
+  sum(ORDER_TOTAL) month_cost
+  from oe.orders
+  group by EXTRACT(year FROM ORDER_DATE), EXTRACT(month FROM ORDER_DATE)
+)
+order by year_, month_
+
+
+
+
+Views:
+
+3.
+create or replace view most_ordered_product as
+select PRODUCT_ID most_ordered_product, sum(quantity) total_quantity
+from oe.order_items
+having sum(quantity) in
+  (
+  select max(sum(quantity))
+  from oe.order_items
+  group by PRODUCT_ID
+  )
+group by PRODUCT_ID
+
+4.
